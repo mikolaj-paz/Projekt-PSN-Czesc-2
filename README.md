@@ -1,0 +1,1 @@
+### W celu poprawnego działania, należy pobrać do folderu root dane z [kaggle.com](https://www.kaggle.com/competitions/facial-keypoints-detection/data)
