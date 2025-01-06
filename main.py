@@ -2,49 +2,77 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import numpy as np
+import sys
 
 from loadkaggle import load_kaggle
 from dataset import FacialKeypointsDataset
 from cnn import KeypointCNN
-from train import train_model
-from visualize import visualize_predictions
+from train import train_model, train_model_with_visualization
+from visualize import visualize_predictions, run_webcam_visualization
+from menu import main_menu
+from modelsaving import save_model_weights, load_model_weights
 
-# Przygotowanie danych
-train_images, train_keypoints = load_kaggle("dane/training.csv")
-test_images, test_keypoints = load_kaggle("dane/test.csv")
+def main():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # Model na GPU (jeśli dostępne)
+    model = KeypointCNN().to(device) # Tworzenie modelu
 
-# Sprawdź obrazy i punkty kluczowe
-print(f"Any NaN in train_images: {np.isnan(train_images).any()}")
-print(f"Any NaN in train_keypoints: {np.isnan(train_keypoints).any()}")
+    choice = main_menu()
 
-print(f"Any Inf in train_images: {np.isinf(train_images).any()}")
-print(f"Any Inf in train_keypoints: {np.isinf(train_keypoints).any()}")
+    match choice:
 
-# Dataset dla treningu
-train_dataset = FacialKeypointsDataset(train_images, train_keypoints)
+        case "1": # Trening od nowa
+            # Przygotowanie danych
+            print("Ladowanie danych treningowych...")
+            train_images, train_keypoints = load_kaggle("dane/train_split.csv")
+            test_images, test_keypoints = load_kaggle("dane/val_split.csv")
 
-# Dataset dla walidacji
-test_dataset = FacialKeypointsDataset(test_images, test_keypoints)
+            # Sprawdź obrazy i punkty kluczowe
+            print(f"Czy NaN w train_images: {np.isnan(train_images).any()}")
+            print(f"Czy NaN w train_keypoints: {np.isnan(train_keypoints).any()}")
+            print(f"Czy Inf w train_images: {np.isinf(train_images).any()}")
+            print(f"Czy Inf w train_keypoints: {np.isinf(train_keypoints).any()}")
 
-# DataLoader dla treningu i walidacji
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+            train_dataset = FacialKeypointsDataset(train_images, train_keypoints) # Dataset dla treningu
+            test_dataset = FacialKeypointsDataset(test_images, test_keypoints) # Dataset dla walidacji
 
-# Model
-model = KeypointCNN()
+            train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True) # DataLoader dla treningu
+            test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False) # DataLoader dla walidacji
+            
+            criterion = nn.MSELoss() # Funkcja straty
 
-# Funkcja straty
-criterion = nn.MSELoss()
+            optimizer = torch.optim.Adam(model.parameters(), lr=0.001) # Optymalizator
 
-# Optymalizator
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+            # Trenowanie modelu
+            print("Rozpoczeto trening od zera...")
+            train_model_with_visualization(model, device, train_loader, test_loader, criterion, optimizer, epochs=100)
+            print("Zapisywanie wynikow...")
+            save_model_weights(model) # Zapisanie modelu do pliku
 
-# Przeniesienie modelu na GPU (jeśli dostępne)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
+        case "2": # Wczytanie wag z pliku
+            print("Wczytywanie wag...")
+            load_model_weights(model)
 
-# Trenowanie modelu
-train_model(model, device, train_loader, test_loader, criterion, optimizer, 20)
+            # Testowanie
+            print("Wczytywanie danych testowych...")
+            test_images, test_keypoints = load_kaggle("dane/test.csv")
+            test_dataset = FacialKeypointsDataset(test_images, test_keypoints) # Dataset dla testow
+            test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False) # DataLoader dla testow
 
-# Wizualizacja wyników
-visualize_predictions(model, device, test_loader)
+            # Wizualizacja wynikow
+            visualize_predictions(model, device, test_loader)
+        
+        case "3": # Wizualizacja na kamerze
+            print("Uruchamianie wizualizacji...")
+            load_model_weights(model)
+            run_webcam_visualization(model, device, scale_factor=1.0)
+
+        case "4": # Wyjscie
+            sys.exit()
+        
+        case _:
+            print("Niezrozumialy wybor, sprobuj jeszcze raz")
+            main()
+
+# Uruchomienie programu
+if __name__ == "__main__":
+    main()
