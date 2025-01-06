@@ -10,8 +10,6 @@ class FacialKeypointsDataset(Dataset):
         return len(self.images)
 
     def __getitem__(self, idx):
-        image = self.images[idx].unsqueeze(0)
-
         if self.keypoints is not None:
             return self.images[idx], self.keypoints[idx]
         else:
