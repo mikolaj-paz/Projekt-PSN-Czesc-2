@@ -1,10 +1,7 @@
 import torch
+import torch.nn as nn
 from torch.nn.modules import Module
 from torch.utils.data import DataLoader
-
-import os
-import matplotlib.pyplot as plt
-import numpy as np
 
 from visualize import compare_predictions
 
@@ -38,9 +35,12 @@ def train_model(model : Module, device : torch.device, train_loader : DataLoader
 
 def train_model_with_tensorboard(model, device, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs=10):
     from torch.utils.tensorboard import SummaryWriter
-    writer = SummaryWriter(log_dir="runs/facial_keypoints")
+    writer = SummaryWriter()
 
     val_images, val_keypoints = next(iter(val_loader))
+    train_images, train_keypoints = next(iter(train_loader))
+
+    writer.add_graph(model, train_images)
     
     for epoch in range(num_epochs):
         # Oblicz blad walidacji
@@ -83,9 +83,13 @@ def train_model_with_tensorboard(model, device, train_loader, val_loader, criter
         print(f"Epoch {epoch+1}/{num_epochs}, Train loss: {train_loss:.4f}, Val loss: {val_loss:.4f}")
 
         # Log to TensorBoard
-        writer.add_scalar("Train loss", train_loss, epoch)
-        writer.add_scalar("Val loss", val_loss, epoch)
-        writer.add_figure('Predykcje vs prawidlowe', compare_predictions(model, device, val_images, val_keypoints, 1), global_step=epoch)
+        writer.add_scalar("Train loss", train_loss, epoch+1)
+        writer.add_scalar("Val loss", val_loss, epoch+1)
+        writer.add_figure('Predykcje vs prawidlowe', compare_predictions(model, device, val_images, val_keypoints, 1), global_step=epoch+1)
+        conv_layer_idx = 0 # Licznik warstw konwolucyjnych
+        for name, module in model.named_modules():
+            if isinstance(module, nn.Conv2d):
+                conv_layer_idx += 1
+                writer.add_histogram(f"Conv2d[{name}]", module.weight, epoch+1)
             
     writer.close()
-

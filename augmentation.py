@@ -8,7 +8,7 @@ img_size = 96
 
 class to_tensor(object):
     def __call__(self, image):
-        return torch.from_numpy(image)
+        return torch.from_numpy(image).to(device)
 
 class add_noise(object):
     def __init__(self, mean=0., std=.01, p=.25):

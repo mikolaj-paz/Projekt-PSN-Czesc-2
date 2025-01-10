@@ -15,7 +15,12 @@ from augmentation import transform_train_image, transform_val_image, combined_tr
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # Model na GPU (jeśli dostępne)
-    model = ImprovedKeypointCNN().to(device) # Tworzenie modelu
+    model = ImprovedKeypointCNN() # Tworzenie modelu
+
+    if torch.cuda.is_available():
+        model.cuda()
+
+    print(f"Urzadzenie: {device}")
 
     choice = main_menu()
 
@@ -49,7 +54,7 @@ def main():
 
             # Trenowanie modelu
             print("Rozpoczeto trening od zera...")
-            train_model_with_tensorboard(model, device, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs=100)
+            train_model_with_tensorboard(model, device, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs=1000)
             print("Zapisywanie wynikow...")
             save_model_weights(model) # Zapisanie modelu do pliku
 
