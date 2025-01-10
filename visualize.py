@@ -1,32 +1,24 @@
 import torch
 import cv2
 import matplotlib.pyplot as plt
+import numpy as np
 
-def visualize_predictions(model, device, test_loader, num_images=5):
+def visualize_predictions(model, device, test_loader, num_images=10):
     model.eval()
     with torch.no_grad():
-        # Pobierz paczkę danych z test_loader
-        batch = next(iter(test_loader))
-        
-        # Jeśli batch zawiera obrazy i etykiety
-        if isinstance(batch, (list, tuple)):
-            images = batch[0]
-        else:  # Jeśli batch zawiera tylko obrazy
-            images = batch
-        
-        # Przekształć listę na tensor, jeśli to konieczne
-        if isinstance(images, list):
-            images = torch.stack(images)
+        images, keypoints = next(iter(test_loader))
 
         images = images.to(device)
         predictions = model(images).cpu().numpy()
 
         for i in range(num_images):
             img = images[i].cpu().numpy().squeeze()
+            true_keypoints = keypoints[i].cpu().numpy().reshape(-1, 2)
             pred = predictions[i].reshape(-1, 2) # (x, y)
 
             plt.imshow(img, cmap='gray')
-            plt.scatter(pred[:, 0], pred[:, 1], c='r', s=10) # Skala do wymiarów obrazu
+            plt.scatter(true_keypoints[:, 0], true_keypoints[:, 1], c='g', s=10)
+            plt.scatter(pred[:, 0], pred[:, 1], c='r', s=10)
             plt.show()
 
 def run_webcam_visualization(model, device, face_cascade_path="haarcascade_frontalface_default.xml", scale_factor=1.5):
@@ -104,3 +96,29 @@ def run_webcam_visualization(model, device, face_cascade_path="haarcascade_front
     
     cap.release()
     cv2.destroyAllWindows()
+
+def compare_predictions(model, device, images, keypoints, img_num=None):
+    if isinstance(images, list):
+        images = torch.stack(images)
+    
+    images = images.to(device)
+    keypoints = keypoints.to(device)
+
+    idx = img_num if img_num is not None else np.random.randint(len(images))
+
+    img = images[idx].cpu().numpy().squeeze()
+    true_keypoints = keypoints[idx].cpu().numpy().reshape(-1, 2)
+
+    model.eval()
+    with torch.no_grad():
+        predictions = model(images).cpu().numpy()
+    
+    pred = predictions[idx].reshape(-1, 2)
+
+    fig, ax = plt.subplots()
+    ax.imshow(img, cmap='gray')
+    ax.scatter(true_keypoints[:, 0], true_keypoints[:, 1], c='g', s=10)
+    ax.scatter(pred[:, 0], pred[:, 1], c='r', s=10)
+    ax.axis('off')
+
+    return fig
