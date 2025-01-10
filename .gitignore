@@ -173,5 +173,8 @@ cython_debug/
 # Dane z kaggle.com
 dane/
 
+# Dane o treningu
+runs/
+
 # Plik PyTorch
 *.pth
