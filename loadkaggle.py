@@ -20,7 +20,6 @@ def load_kaggle(path : str):
     images = images / 255.0
 
     # Dodanie kanału dla PyTorch
-    images.reshape(-1, 1, 96, 96)
+    images = np.reshape(images, (-1, 1, 96, 96))
 
     return images, keypoints
-    
