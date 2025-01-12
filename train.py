@@ -46,25 +46,24 @@ def train_model_with_tensorboard(model, device, train_loader, val_loader, criter
         # Oblicz blad walidacji
         model.eval()
         val_losses = []
+        val_errors = []
         with torch.no_grad():
-            for images, keypoints in val_loader:
-                images.to(device)
-                keypoints.to(device)
-                
+            for images, keypoints in val_loader:         
                 outputs = model(images)
-                loss = criterion(outputs, keypoints)
-                val_losses.append(loss.item())
+                
+                val_losses.append(criterion(outputs, keypoints).item())
+                val_errors.append(torch.mean(torch.abs((keypoints - outputs) / keypoints)).item())
 
         # RMSE dla bledu walidacji
         val_loss = (sum(val_losses) / len(val_loader) ** .5)
+
+        # Wartosc bledu
+        val_error = sum(val_errors) / len(val_errors)
 
         # Trenowanie modelu
         model.train()
         train_losses = []
         for images, keypoints in train_loader:
-            images.to(device)
-            keypoints.to(device)
-            
             optimizer.zero_grad()
             outputs = model(images)
             loss = criterion(outputs, keypoints)
@@ -85,11 +84,16 @@ def train_model_with_tensorboard(model, device, train_loader, val_loader, criter
         # Log to TensorBoard
         writer.add_scalar("Train loss", train_loss, epoch+1)
         writer.add_scalar("Val loss", val_loss, epoch+1)
+        writer.add_scalar("Accuracy", 1.0-val_error, epoch+1)
         writer.add_figure('Predykcje vs prawidlowe', compare_predictions(model, device, val_images, val_keypoints, 1), global_step=epoch+1)
         conv_layer_idx = 0 # Licznik warstw konwolucyjnych
+        lin_layer_idx = 0 # Licznik warstw zwyklych
         for name, module in model.named_modules():
             if isinstance(module, nn.Conv2d):
                 conv_layer_idx += 1
                 writer.add_histogram(f"Conv2d[{name}]", module.weight, epoch+1)
+            elif isinstance(module, nn.Linear):
+                lin_layer_idx += 1
+                writer.add_histogram(f"Linear[{name}]", module.weight, epoch+1)
             
     writer.close()
