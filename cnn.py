@@ -1,33 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
-class KeypointCNN(nn.Module):
-    def __init__(self):
-        super(KeypointCNN, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, 5) 
-        self.conv2 = nn.Conv2d(32, 64, 3) 
-        self.conv3 = nn.Conv2d(64, 128, 1)
-
-        self.pool = nn.MaxPool2d(2, 2)
-
-        self.fc1 = nn.Linear(128 * 11 * 11, 512) # Pełne połączenie
-        self.fc2 = nn.Linear(512, 30) # 15 punktów kluczowych (x, y) dla każdego punktu
-
-        self.dropout = nn.Dropout(p=.25) # Dropout
-
-    def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = self.pool(F.relu(self.conv3(x)))
-
-        x = x.view(x.size(0), -1) # Spłaszcz
-
-        x = F.relu(self.fc1(x))
-        x = self.dropout(x)
-        x = F.relu(self.fc2(x))
-        
-        return x
-
 class ImprovedKeypointCNN(nn.Module):
     def __init__(self):
         super(ImprovedKeypointCNN, self).__init__()

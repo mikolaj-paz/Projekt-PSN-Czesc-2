@@ -6,8 +6,8 @@ import sys
 
 from loadkaggle import load_kaggle
 from dataset import FacialKeypointsDataset
-from cnn import KeypointCNN, ImprovedKeypointCNN
-from train import train_model, train_model_with_tensorboard
+from cnn import ImprovedKeypointCNN
+from train import train_model_with_tensorboard
 from visualize import visualize_predictions, run_webcam_visualization
 from menu import main_menu
 from modelsaving import save_model_weights, load_model_weights
@@ -38,9 +38,6 @@ def main():
             print(f"Czy Inf w train_images: {np.isinf(train_images).any()}")
             print(f"Czy Inf w train_keypoints: {np.isinf(train_keypoints).any()}")
 
-            # train_dataset = FacialKeypointsDataset(train_images, train_keypoints, transform_val_image) # Dataset dla treningu
-            # val_dataset = FacialKeypointsDataset(val_images, val_keypoints, transform_val_image) # Dataset dla walidacji
-
             train_dataset = FacialKeypointsDataset(train_images, train_keypoints, transform_train_image, combined_transform)
             val_dataset = FacialKeypointsDataset(val_images, val_keypoints, transform_val_image)
 
@@ -54,7 +51,7 @@ def main():
 
             # Trenowanie modelu
             print("Rozpoczeto trening od zera...")
-            train_model_with_tensorboard(model, device, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs=1000)
+            train_model_with_tensorboard(model, device, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs=10000)
             print("Zapisywanie wynikow...")
             save_model_weights(model) # Zapisanie modelu do pliku
 

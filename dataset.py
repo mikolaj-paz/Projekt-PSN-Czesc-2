@@ -1,6 +1,5 @@
 import torch
 from torch.utils.data import Dataset
-import torchvision.transforms as transforms
 from augmentation import combined_transform
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # Model na GPU (jeśli dostępne)

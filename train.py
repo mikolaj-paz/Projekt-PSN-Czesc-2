@@ -1,37 +1,7 @@
 import torch
 import torch.nn as nn
-from torch.nn.modules import Module
-from torch.utils.data import DataLoader
 
 from visualize import compare_predictions
-
-def train_model(model : Module, device : torch.device, train_loader : DataLoader, test_loader : DataLoader, criterion, optimizer, epochs=10):
-    model.train() # Ustawienie modelu w tryb treningu
-
-    for epoch in range(epochs):
-        running_loss = 0.0
-
-        for images, keypoints in train_loader:
-            images, keypoints = images.to(device), keypoints.to(device) # Przenieś na GPU
-
-            # Zerowanie gradientów
-            optimizer.zero_grad()
-
-            # Forward pass
-            outputs = model(images)
-
-            # Obliczanie straty
-            loss = criterion(outputs, keypoints)
-
-            # Backward pass i aktualizacje wag
-            loss.backward()
-            optimizer.step()
-
-            running_loss += loss.item()
-        
-        # Średnia strata na epokę
-        avg_loss = running_loss / len(train_loader)
-        print(f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}")
 
 def train_model_with_tensorboard(model, device, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs=10):
     from torch.utils.tensorboard import SummaryWriter
@@ -55,7 +25,7 @@ def train_model_with_tensorboard(model, device, train_loader, val_loader, criter
                 val_errors.append(torch.mean(torch.abs((keypoints - outputs) / keypoints)).item())
 
         # RMSE dla bledu walidacji
-        val_loss = (sum(val_losses) / len(val_loader) ** .5)
+        val_loss = (sum(val_losses) / len(val_loader)) ** .5
 
         # Wartosc bledu
         val_error = sum(val_errors) / len(val_errors)
