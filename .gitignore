@@ -176,5 +176,5 @@ dane/
 # Dane o treningu
 runs/
 
-# Plik PyTorch
-*.pth
+# Pliki archiwalne PyTorch
+model_weights *.pth
